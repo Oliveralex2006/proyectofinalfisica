@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulación MRUV Interactiva - Selección de Fórmulas</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #50e3c2);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #fff;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #4a90e2;
+    }
+    main {
+      flex: 1;
+      max-width: 1100px;
+      margin: 1rem auto;
+      padding: 1rem;
+      background: #fafafa;
+      border-radius: 12px;
+      box-shadow: 0 12px 18px -6px rgba(0,0,0,0.15);
+      width: 95%;
+    }
+    h2 {
+      color: #4a90e2;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+    section {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin: 0.5rem 0 0.3rem 0;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    select, input[type=number] {
+      padding: 0.5rem;
+      width: 100%;
+      border: 2px solid #4a90e2;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.3s ease;
+    }
+    select:focus, input[type=number]:focus {
+      border-color: #50e3c2;
+      outline: none;
+    }
+    button {
+      background: #4a90e2;
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(74,144,226,0.5);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      margin-top: 1rem;
+      user-select: none;
+    }
+    button:hover:not(:disabled) {
+      background: #50e3c2;
+      box-shadow: 0 8px 14px rgba(80,227,194,0.7);
+    }
+    button:disabled {
+      background: #bbb;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .inputs-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    @media(max-width: 700px) {
+      .inputs-group {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+      header {
+        font-size: 1.3rem;
+        padding: 0.8rem;
+      }
+      main {
+        padding: 0.8rem;
+      }
+      button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+      }
+    }
+
+    .formula-desc {
+      background: #fff;
+      border: 2px solid #4a90e2;
+      border-radius: 12px;
+      padding: 0.8rem 1.2rem;
+      margin-top: 0.8rem;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #333;
+      white-space: pre-line;
+      box-shadow: inset 0 0 12px rgba(74,144,226,0.15);
+      line-height: 1.4;
+    }
+
+    #results-box {
+      background: #eaf6f6;
+      border: 2px solid #50e3c2;
+      padding: 0.8rem 1.2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    canvas {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      max-width: 100%;
+      height: 220px !important;
+    }
+
+    #simulationCanvas {
+      background: #fff;
+      border: 2px solid #4a90e2;
+      border-radius: 12px;
+      margin-top: 1rem;
+      width: 100%;
+      height: 100px;
+      display: block;
+      position: relative;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0.8rem;
+      font-size: 0.85rem;
+      color: #eee;
+      background: #4a90e2;
+    }
+
+    #summaryButtonContainer {
+      margin-top: 1rem;
+      text-align: right;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 1.5rem;
+      border: 2px solid #4a90e2;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      color: #4a90e2;
+      font-weight: bold;
+      font-size: 1.3rem;
+      margin: 0;
+    }
+
+    .close {
+      color: #aaa;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: #333;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .summary-table th, .summary-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .summary-table th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    .summary-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .result-row {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    @media(max-width: 500px) {
+      .modal-content {
+        margin: 20% auto;
+        padding: 1rem;
+      }
+      .modal-title {
+        font-size: 1.1rem;
+      }
+      .summary-table th, .summary-table td {
+        padding: 0.3rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>Simulación MRUV Interactiva - Selección de Fórmulas</header>
+  <main>
+    <section>
+      <h2>Fórmulas</h2>
+      <label for="formulaSelect">Selecciona la fórmula con la que deseas trabajar:</label>
+      <select id="formulaSelect" aria-label="Seleccionar fórmula MRUV">
+        <option value="" selected disabled>-- Selecciona una fórmula --</option>
+        <option value="1">1) x = x₀ + v₀·t + (1/2)·a·t² (Posición final)</option>
+        <option value="2">2) v = v₀ + a·t (Velocidad final)</option>
+        <option value="3">3) v² = v₀² + 2·a·(x - x₀) (Relación sin tiempo)</option>
+        <option value="4">4) a = (v - v₀) / t (Aceleración)</option>
+      </select>
+      <div id="formulaDescription" class="formula-desc" aria-live="polite" style="min-height: 80px; margin-top: 1rem;">
+        Selecciona una fórmula para ver detalles y campos de entrada.
+      </div>
+    </section>
+
+    <section>
+      <h2>Datos de entrada</h2>
+      <form id="inputForm" onsubmit="return false;">
+        <div id="inputsContainer" class="inputs-group" aria-live="polite" aria-label="Campos de entrada dinámicos">
+          <!-- Aquí se insertan los inputs dinámicos -->
+        </div>
+        <button id="btnCalculate" disabled>Calcular y Simular</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Simulación visual</h2>
+      <canvas id="simulationCanvas" aria-label="Simulación visual del movimiento"></canvas>
+    </section>
+
+    <section>
+      <h2>Resultados finales</h2>
+      <div id="results-box" aria-live="polite" aria-atomic="true">
+        Aquí se mostrarán los resultados después de calcular.
+      </div>
+      <div id="summaryButtonContainer">
+        <button id="btnSummary" disabled>Ver Resumen</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Gráficos</h2>
+      <canvas id="posChart" aria-label="Gráfico de posición vs tiempo"></canvas>
+      <canvas id="velChart" aria-label="Gráfico de velocidad vs tiempo" style="margin-top: 1.5rem;"></canvas>
+    </section>
+  </main>
+
+  <!-- Modal para el resumen -->
+  <div id="summaryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Resumen de la Simulación</h2>
+        <span class="close">&times;</span>
+      </div>
+      <div id="modalBody">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Parámetro</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody">
+            <!-- Los datos se insertarán aquí -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Proyecto Final - Simulación MRUV | Hecho con ❤️
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const formulaSelect = document.getElementById('formulaSelect');
+    const formulaDescription = document.getElementById('formulaDescription');
+    const inputsContainer = document.getElementById('inputsContainer');
+    const btnCalculate = document.getElementById('btnCalculate');
+    const btnSummary = document.getElementById('btnSummary');
+    const resultsBox = document.getElementById('results-box');
+    const summaryModal = document.getElementById('summaryModal');
+    const closeBtn = document.querySelector('.close');
+    const summaryTableBody = document.getElementById('summaryTableBody');
+
+    const posChartCanvas = document.getElementById('posChart');
+    const velChartCanvas = document.getElementById('velChart');
+    const simulationCanvas = document.getElementById('simulationCanvas');
+
+    let posChart, velChart;
+    let animationId = null;
+    let animIndex = 0;
+
+    // Current simulation data arrays:
+    let timeData = [];
+    let posData = [];
+    let velData = [];
+
+    // Current inputs and results for summary
+    let currentInputs = {};
+    let currentResultLabel = '';
+    let currentResultValue = null;
+    let currentFormulaKey = '';
+
+    // Formula definitions and required inputs
+    const formulas = {
+      1: {
+        desc: "Fórmula 1:\nPosición final:\nx = x₀ + v₀·t + (1/2)·a·t²\n\nIntroduce los valores de posición inicial x₀, velocidad inicial v₀, aceleración a y tiempo t.\nSe calculará la posición final x.",
+        inputs: [
+          {id:'x0', label:'Posición inicial x₀ (m)', placeholder:'Ej: 0', required:true},
+          {id:'v0', label:'Velocidad inicial v₀ (m/s)', placeholder:'Ej: 0', required:true},
+          {id:'a',  label:'Aceleración a (m/s²)', placeholder:'Ej: 1', required:true},
+          {id:'t',  label:'Tiempo t (s)', placeholder:'Ej: 10', required:true}
+        ],
+        calculate: ({x0,v0,a,t}) => {
+          const x = x0 + v0*t + 0.5*a*t*t;
+          const dt = Math.min(0.1, t/200);
+          let times = [], positions = [], velocities = [];
+          for(let time=0; time<=t+dt; time+=dt) {
+            times.push(time);
+            positions.push(x0 + v0*time + 0.5*a*time*time);
+            velocities.push(v0 + a*time);
+          }
+          return {resultVar:'x', value:x, times, positions, velocities};
+        },
+        resultLabel: 'Posición final x (m)'
+      },
+      2: {
+        desc: "Fórmula 2:\nVelocidad final:\nv = v₀ + a·t\n\nIntroduce velocidad inicial v₀, aceleración a y tiempo t.\nSe calculará la velocidad final v.",
+        inputs: [
+          {id:'v0', label:'Velocidad inicial v₀ (m/s)', placeholder:'Ej: 0', required:true},
+          {id:'a',  label:'Aceleración a (m/s²)', placeholder:'Ej: 1', required:true},
+          {id:'t',  label:'Tiempo t (s)', placeholder:'Ej: 10', required:true},
+          {id:'x0', label:'Posición inicial x₀ (m)', placeholder:'Ej: 0', required:false}
+        ],
+        calculate: ({x0=0,v0,a,t}) => {
+          const v = v0 + a*t;
+          const dt = Math.min(0.1, t/200);
+          let times = [], positions = [], velocities = [];
+          for(let time=0; time<=t+dt; time+=dt){
+            times.push(time);
+            positions.push(x0 + v0*time + 0.5*a*time*time);
+            velocities.push(v0 + a*time);
+          }
+          return {resultVar:'v', value:v, times, positions, velocities};
+        },
+        resultLabel: 'Velocidad final v (m/s)'
+      },
+      3: {
+        desc: "Fórmula 3:\nRelación sin tiempo:\nv² = v₀² + 2·a·(x - x₀)\n\nIntroduce velocidad inicial v₀, aceleración a y posición final x.\nSe calculará la velocidad final v.",
+        inputs: [
+          {id:'v0', label:'Velocidad inicial v₀ (m/s)', placeholder:'Ej: 0', required:true},
+          {id:'a',  label:'Aceleración a (m/s²)', placeholder:'Ej: 1', required:true},
+          {id:'x',  label:'Posición final x (m)', placeholder:'Ej: 50', required:true},
+          {id:'x0', label:'Posición inicial x₀ (m)', placeholder:'Ej: 0', required:false}
+        ],
+        calculate: ({v0,a,x,x0=0}) => {
+          const underRoot = v0*v0 + 2*a*(x - x0);
+          if(underRoot < 0) throw new Error("Raíz negativa, parámetros inválidos para cálculo de velocidad final.");
+          const v = Math.sqrt(underRoot);
+          // To ensure final position matches result exactly in animation:
+          let times = [0, 1];
+          let positions = [x0, x];
+          let velocities = [v0, v];
+          return {resultVar:'v', value:v, times, positions, velocities};
+        },
+        resultLabel: 'Velocidad final v (m/s)'
+      },
+      4: {
+        desc: "Fórmula 4:\nAceleración:\na = (v - v₀) / t\n\nIntroduce velocidad final v, velocidad inicial v₀ y tiempo t.\nSe calculará la aceleración a.",
+        inputs: [
+          {id:'v',  label:'Velocidad final v (m/s)', placeholder:'Ej: 20', required:true},
+          {id:'v0', label:'Velocidad inicial v₀ (m/s)', placeholder:'Ej: 0', required:true},
+          {id:'t',  label:'Tiempo t (s)', placeholder:'Ej: 5', required:true},
+          {id:'x0', label:'Posición inicial x₀ (m)', placeholder:'Ej: 0', required:false}
+        ],
+        calculate: ({v,v0,t,x0=0}) => {
+          if(t === 0) throw new Error('El tiempo no puede ser cero.');
+          const a = (v - v0)/t;
+          const dt = Math.min(0.1, t/200);
+          let times = [], positions = [], velocities = [];
+          for(let time=0; time<=t+dt; time+=dt){
+            times.push(time);
+            positions.push(x0 + v0*time + 0.5*a*time*time);
+            velocities.push(v0 + a*time);
+          }
+          return {resultVar:'a', value:a, times, positions, velocities};
+        },
+        resultLabel: 'Aceleración a (m/s²)'
+      }
+    };
+
+    function createInputField({id, label, placeholder, required}) {
+      const wrapper = document.createElement('div');
+      const lbl = document.createElement('label');
+      lbl.htmlFor = id;
+      lbl.textContent = label + (required ? ' *' : ' (opcional)');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.id = id;
+      input.placeholder = placeholder || '';
+      input.step = 'any';
+      if(required) input.required = true;
+      wrapper.appendChild(lbl);
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+
+    function updateInputsAndDescription() {
+      const val = formulaSelect.value;
+      inputsContainer.innerHTML = '';
+      btnCalculate.disabled = true;
+      btnSummary.disabled = true;
+      resultsBox.textContent = 'Aquí se mostrarán los resultados después de calcular.';
+      stopAnimation();
+
+      if (!val || !formulas[val]) {
+        formulaDescription.textContent = 'Selecciona una fórmula para ver detalles y campos de entrada.';
+        return;
+      }
+      const formulaData = formulas[val];
+      formulaDescription.textContent = formulaData.desc;
+
+      formulaData.inputs.forEach(inputInfo => {
+        const inputElem = createInputField(inputInfo);
+        inputsContainer.appendChild(inputElem);
+      });
+      btnCalculate.disabled = false;
+    }
+
+    formulaSelect.addEventListener('change', updateInputsAndDescription);
+
+    function getInputValues() {
+      const inputs = inputsContainer.querySelectorAll('input[type=number]');
+      let values = {};
+      for(const input of inputs) {
+        let val = input.value.trim();
+        if(val === '') {
+          values[input.id] = undefined;
+        } else {
+          values[input.id] = Number(val);
+        }
+      }
+      return values;
+    }
+
+    function clearCharts() {
+      if(posChart) posChart.destroy();
+      if(velChart) velChart.destroy();
+      posChart = null;
+      velChart = null;
+    }
+
+    function renderCharts(times, positions, velocities) {
+      clearCharts();
+      posChart = new Chart(posChartCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: times.map(t => t.toFixed(2)),
+          datasets: [{
+            label: 'Posición (m)',
+            data: positions,
+            borderColor: '#50e3c2',
+            backgroundColor: 'rgba(80,227,194,0.3)',
+            fill: true,
+            pointRadius: 0,
+            borderWidth: 2,
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'nearest', intersect: false },
+          plugins: {
+            legend: { labels: {font: {weight: 'bold'}, color:'#333'} },
+            tooltip: {
+              callbacks: {
+                label: ctx => `Posición: ${ctx.parsed.y.toFixed(3)} m`
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Tiempo (s)', color:'#333', font: {size:14} }, ticks:{color:'#333'} },
+            y: { title: { display: true, text: 'Posición (m)', color:'#333', font: {size:14} }, ticks:{color:'#333'} }
+          }
+        }
+      });
+
+      velChart = new Chart(velChartCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: times.map(t => t.toFixed(2)),
+          datasets: [{
+            label: 'Velocidad (m/s)',
+            data: velocities,
+            borderColor: '#4a90e2',
+            backgroundColor: 'rgba(74,144,226,0.3)',
+            fill: true,
+            pointRadius: 0,
+            borderWidth: 2,
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: {font: {weight: 'bold'}, color:'#333'} },
+            tooltip: {
+              callbacks: {
+                label: ctx => `Velocidad: ${ctx.parsed.y.toFixed(3)} m/s`
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Tiempo (s)', color:'#333', font: {size:14} }, ticks:{color:'#333'} },
+            y: { title: { display: true, text: 'Velocidad (m/s)', color:'#333', font: {size:14} }, ticks:{color:'#333'} }
+          }
+        }
+      });
+    }
+
+    function startAnimation(times, positions) {
+      const ctx = simulationCanvas.getContext('2d');
+      const w = simulationCanvas.width = simulationCanvas.clientWidth * devicePixelRatio;
+      const h = simulationCanvas.height = simulationCanvas.clientHeight * devicePixelRatio;
+      ctx.resetTransform();
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+
+      const marginH = 30;
+      const lineY = h / devicePixelRatio / 2;
+      const animWidth = simulationCanvas.clientWidth - 2*marginH;
+
+      const minPos = Math.min(...positions);
+      const maxPos = Math.max(...positions);
+      const rangePos = maxPos - minPos || 1;
+
+      function drawBase() {
+        ctx.clearRect(0, 0, simulationCanvas.clientWidth, simulationCanvas.clientHeight);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#4a90e2';
+        ctx.beginPath();
+        ctx.moveTo(marginH, lineY);
+        ctx.lineTo(marginH + animWidth, lineY);
+        ctx.stroke();
+
+        // Start
+        ctx.fillStyle = '#4a90e2';
+        ctx.beginPath();
+        ctx.arc(marginH, lineY, 8, 0, Math.PI*2);
+        ctx.fill();
+        ctx.font = 'bold 14px Roboto,sans-serif';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('Inicio', marginH, lineY + 25);
+
+        // End
+        ctx.beginPath();
+        ctx.arc(marginH + animWidth, lineY, 8, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillText('Final', marginH + animWidth, lineY + 25);
+      }
+
+      animIndex = 0;
+
+      function animate() {
+        drawBase();
+        // Fix to show final position same as results:
+        const indexToShow = animIndex < positions.length ? animIndex : positions.length - 1;
+        const pos = positions[indexToShow];
+        const normPos = (pos - minPos) / rangePos;
+        const x = marginH + normPos*animWidth;
+
+        ctx.fillStyle = '#50e3c2';
+        ctx.beginPath();
+        ctx.shadowColor = 'rgba(80,227,194,0.8)';
+        ctx.shadowBlur = 12;
+        ctx.arc(x, lineY, 15, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 16px Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pos.toFixed(2) + ' m', x, lineY - 20);
+
+        animIndex++;
+        if(animIndex < positions.length) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          animationId = null;
+        }
+      }
+      if(animationId) cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if(animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      const ctx = simulationCanvas.getContext('2d');
+      ctx.clearRect(0, 0, simulationCanvas.width, simulationCanvas.height);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#4a90e2';
+      const w = simulationCanvas.clientWidth;
+      const h = simulationCanvas.clientHeight;
+      ctx.beginPath();
+      ctx.moveTo(30, h/2);
+      ctx.lineTo(w-30, h/2);
+      ctx.stroke();
+    }
+
+    function showSummary() {
+      if(!currentFormulaKey || !formulas[currentFormulaKey]) return;
+      
+      summaryTableBody.innerHTML = '';
+      
+      // Add inputs to summary
+      formulas[currentFormulaKey].inputs.forEach(inputDef => {
+        const val = currentInputs[inputDef.id];
+        if(val !== undefined && val !== null && val !== '') {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${inputDef.label.replace('*','').trim()}</td>
+            <td>${val}</td>
+          `;
+          summaryTableBody.appendChild(row);
+        }
+      });
+      
+      // Add result to summary
+      const resultRow = document.createElement('tr');
+      resultRow.className = 'result-row';
+      resultRow.innerHTML = `
+        <td>${currentResultLabel}</td>
+        <td>${currentResultValue}</td>
+      `;
+      summaryTableBody.appendChild(resultRow);
+      
+      // Show the modal
+      summaryModal.style.display = 'block';
+    }
+
+    btnCalculate.addEventListener('click', () => {
+      resultsBox.textContent = '';
+      stopAnimation();
+      btnSummary.disabled = true;
+
+      const formulaKey = formulaSelect.value;
+      if(!formulaKey || !formulas[formulaKey]) {
+        alert('Por favor selecciona una fórmula válida.');
+        return;
+      }
+      const vals = getInputValues();
+      try {
+        formulas[formulaKey].inputs.forEach(i => {
+          if(i.required) {
+            if(vals[i.id] === undefined || isNaN(vals[i.id])) {
+              throw new Error('El campo "' + i.label + '" es obligatorio y debe ser un número válido.');
+            }
+          }
+        });
+      } catch(e) {
+        alert(e.message);
+        return;
+      }
+
+      try {
+        const result = formulas[formulaKey].calculate(vals);
+
+        // Show results only 2 decimals
+        resultsBox.innerHTML = `<strong>${formulas[formulaKey].resultLabel} = ${result.value.toFixed(2)}</strong>`;
+
+        currentInputs = {...vals};
+        currentResultLabel = formulas[formulaKey].resultLabel;
+        currentResultValue = result.value.toFixed(2);
+        currentFormulaKey = formulaKey;
+
+        if(result.times && result.positions && result.velocities) {
+          // Fix last position to exactly the final result value for consistency in animation
+          result.positions[result.positions.length - 1] = Number(currentResultValue);
+
+          timeData = result.times;
+          posData = result.positions;
+          velData = result.velocities;
+          renderCharts(timeData, posData, velData);
+          startAnimation(timeData, posData);
+          btnSummary.disabled = false;
+        } else {
+          clearCharts();
+          stopAnimation();
+          btnSummary.disabled = false;
+        }
+
+      } catch(e) {
+        alert('Error en el cálculo: ' + e.message);
+        clearCharts();
+        stopAnimation();
+        resultsBox.textContent = 'No se pudo calcular con los datos ingresados.';
+        btnSummary.disabled = true;
+      }
+    });
+
+    // Event listeners for modal
+    btnSummary.addEventListener('click', showSummary);
+    closeBtn.addEventListener('click', () => {
+      summaryModal.style.display = 'none';
+    });
+    window.addEventListener('click', (event) => {
+      if (event.target === summaryModal) {
+        summaryModal.style.display = 'none';
+      }
+    });
+
+    // Initialize UI on load
+    updateInputsAndDescription();
+
+  </script>
+</body>
+</html>
