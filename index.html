@@ -336,7 +336,7 @@
   </div>
 
   <footer>
-    Proyecto Final - Simulación MRUV | FÍSICA
+    Proyecto Final - Simulación MRUV | Hecho por Oliver Alexander
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -389,6 +389,8 @@
             positions.push(x0 + v0*time + 0.5*a*time*time);
             velocities.push(v0 + a*time);
           }
+          // Asegurar que la posición final sea exactamente la calculada
+          positions[positions.length-1] = x;
           return {resultVar:'x', value:x, times, positions, velocities};
         },
         resultLabel: 'Posición final x (m)'
@@ -410,6 +412,9 @@
             positions.push(x0 + v0*time + 0.5*a*time*time);
             velocities.push(v0 + a*time);
           }
+          // Asegurar que la posición final sea exactamente la calculada
+          const finalPos = x0 + v0*t + 0.5*a*t*t;
+          positions[positions.length-1] = finalPos;
           return {resultVar:'v', value:v, times, positions, velocities};
         },
         resultLabel: 'Velocidad final v (m/s)'
@@ -426,10 +431,26 @@
           const underRoot = v0*v0 + 2*a*(x - x0);
           if(underRoot < 0) throw new Error("Raíz negativa, parámetros inválidos para cálculo de velocidad final.");
           const v = Math.sqrt(underRoot);
-          // To ensure final position matches result exactly in animation:
-          let times = [0, 1];
-          let positions = [x0, x];
-          let velocities = [v0, v];
+          
+          // Calcular el tiempo necesario para alcanzar la posición x
+          // Usamos la fórmula cuadrática para encontrar t
+          // x = x0 + v0*t + 0.5*a*t²
+          const discriminant = v0*v0 - 4*(0.5*a)*(x0 - x);
+          if(discriminant < 0) throw new Error("No hay solución real para el tiempo con estos parámetros.");
+          const t1 = (-v0 + Math.sqrt(discriminant))/a;
+          const t2 = (-v0 - Math.sqrt(discriminant))/a;
+          const t = Math.max(t1, t2); // Tomamos el tiempo positivo
+          
+          // Generar datos para la animación
+          const dt = Math.min(0.1, t/200);
+          let times = [], positions = [], velocities = [];
+          for(let time=0; time<=t+dt; time+=dt){
+            times.push(time);
+            positions.push(x0 + v0*time + 0.5*a*time*time);
+            velocities.push(v0 + a*time);
+          }
+          // Asegurar que la posición final sea exactamente x
+          positions[positions.length-1] = x;
           return {resultVar:'v', value:v, times, positions, velocities};
         },
         resultLabel: 'Velocidad final v (m/s)'
@@ -452,6 +473,9 @@
             positions.push(x0 + v0*time + 0.5*a*time*time);
             velocities.push(v0 + a*time);
           }
+          // Asegurar que la posición final sea exactamente la calculada
+          const finalPos = x0 + v0*t + 0.5*a*t*t;
+          positions[positions.length-1] = finalPos;
           return {resultVar:'a', value:a, times, positions, velocities};
         },
         resultLabel: 'Aceleración a (m/s²)'
@@ -632,7 +656,7 @@
 
       function animate() {
         drawBase();
-        // Fix to show final position same as results:
+        // Mostrar siempre el último frame si la animación ha terminado
         const indexToShow = animIndex < positions.length ? animIndex : positions.length - 1;
         const pos = positions[indexToShow];
         const normPos = (pos - minPos) / rangePos;
@@ -652,7 +676,7 @@
         ctx.fillText(pos.toFixed(2) + ' m', x, lineY - 20);
 
         animIndex++;
-        if(animIndex < positions.length) {
+        if(animIndex <= positions.length) {
           animationId = requestAnimationFrame(animate);
         } else {
           animationId = null;
@@ -746,9 +770,6 @@
         currentFormulaKey = formulaKey;
 
         if(result.times && result.positions && result.velocities) {
-          // Fix last position to exactly the final result value for consistency in animation
-          result.positions[result.positions.length - 1] = Number(currentResultValue);
-
           timeData = result.times;
           posData = result.positions;
           velData = result.velocities;
